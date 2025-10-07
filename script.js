@@ -1,106 +1,65 @@
-const apiUrl = "api.php";
-const container = document.getElementById("news-container");
-const prevBtn = document.getElementById("prev-btn");
-const nextBtn = document.getElementById("next-btn");
-const pageInfo = document.getElementById("page-info");
-
-let newsList = [];
-let filtered = [];
+const API_BASE = "../api.php";
+let currentCategory = "Trang chủ";
 let currentPage = 1;
 const perPage = 9;
 
-async function loadNews() {
+async function loadNews(category = "Trang chủ") {
+  currentCategory = category;
+  currentPage = 1;
+
+  document.querySelector("#news").innerHTML = "<p>Đang tải...</p>";
   try {
-    const res = await fetch(apiUrl);
+    const res = await fetch(`${API_BASE}?category=${encodeURIComponent(category)}`);
     const data = await res.json();
-    newsList = data;
-    filtered = [...newsList];
-    render();
-  } catch (err) {
-    container.innerHTML = "<p>Lỗi khi tải dữ liệu!</p>";
+    if (data.error) throw new Error(data.error);
+
+    renderNews(data.news);
+    renderPagination(data.news);
+  } catch (e) {
+    document.querySelector("#news").innerHTML = `<p>Lỗi: ${e.message}</p>`;
   }
 }
 
-function render() {
-  container.innerHTML = "";
+function renderNews(news) {
   const start = (currentPage - 1) * perPage;
-  const pageItems = filtered.slice(start, start + perPage);
+  const paged = news.slice(start, start + perPage);
 
-  if (pageItems.length === 0) {
-    container.innerHTML = "<p>Không có bài viết nào trong mục này.</p>";
-    updatePagination();
-    return;
-  }
-
-  pageItems.forEach((item) => {
-    const card = document.createElement("div");
-    card.className = "news-card";
-    card.innerHTML = `
-      <div class="news-image">
-        <img src="${item.image || 'https://via.placeholder.com/350x200?text=No+Image'}" alt="${item.title}">
+  document.querySelector("#news").innerHTML = paged
+    .map(
+      (item) => `
+      <div class="news-card">
+        <img src="${item.image}" alt="Ảnh" onerror="this.src='https://via.placeholder.com/300x200?text=No+Image'">
+        <div class="news-content">
+          <h3>${item.title}</h3>
+          <p>${item.description.substring(0, 150)}...</p>
+          <a href="${item.link}" target="_blank">Đọc thêm</a>
+        </div>
       </div>
-      <div class="news-content">
-        <h3>${item.title}</h3>
-        <p>${item.description || "Không có mô tả."}</p>
-        <a href="${item.link}" target="_blank">Đọc tiếp</a>
-      </div>
-    `;
-    container.appendChild(card);
-  });
-
-  updatePagination();
+    `
+    )
+    .join("");
 }
 
-function updatePagination() {
-  const totalPages = Math.ceil(filtered.length / perPage);
-  pageInfo.textContent = `Trang ${currentPage} / ${totalPages || 1}`;
-  prevBtn.disabled = currentPage === 1;
-  nextBtn.disabled = currentPage === totalPages || totalPages === 0;
+function renderPagination(news) {
+  const totalPages = Math.ceil(news.length / perPage);
+  const pagination = document.querySelector("#pagination");
+  pagination.innerHTML = "";
+
+  for (let i = 1; i <= totalPages; i++) {
+    const btn = document.createElement("button");
+    btn.textContent = i;
+    btn.className = i === currentPage ? "active" : "";
+    btn.onclick = () => {
+      currentPage = i;
+      renderNews(news);
+      renderPagination(news);
+    };
+    pagination.appendChild(btn);
+  }
 }
 
-prevBtn.onclick = () => {
-  if (currentPage > 1) {
-    currentPage--;
-    render();
-  }
-};
-
-nextBtn.onclick = () => {
-  const totalPages = Math.ceil(filtered.length / perPage);
-  if (currentPage < totalPages) {
-    currentPage++;
-    render();
-  }
-};
-
-// ✅ FIXED CATEGORY FILTER
-document.querySelectorAll("nav button").forEach((btn) => {
-  btn.addEventListener("click", () => {
-    document.querySelectorAll("nav button").forEach((b) => b.classList.remove("active"));
-    btn.classList.add("active");
-
-    const cat = btn.dataset.category;
-    if (cat === "all") {
-      filtered = [...newsList];
-    } else {
-      const keywordMap = {
-        "thoi-su": ["thời sự", "xã hội", "chính trị"],
-        "kinh-doanh": ["kinh doanh", "tài chính", "doanh nghiệp", "thị trường"],
-        "the-thao": ["thể thao", "bóng đá", "v-league", "world cup"],
-        "giai-tri": ["giải trí", "showbiz", "ca sĩ", "phim", "ngôi sao"],
-        "cong-nghe": ["công nghệ", "tech", "AI", "khoa học", "điện thoại"]
-      };
-
-      const keywords = keywordMap[cat] || [];
-      filtered = newsList.filter((n) => {
-        const text = (n.title + " " + (n.description || "")).toLowerCase();
-        return keywords.some((k) => text.includes(k.toLowerCase()));
-      });
-    }
-
-    currentPage = 1;
-    render();
-  });
+document.querySelectorAll(".category-btn").forEach((btn) => {
+  btn.addEventListener("click", () => loadNews(btn.textContent));
 });
 
 loadNews();

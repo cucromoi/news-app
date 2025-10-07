@@ -1,74 +1,48 @@
 <?php
-// -------------------------------------------
-// api.php - Lấy tin tức từ VnExpress theo chuyên mục
-// -------------------------------------------
-header('Content-Type: application/json; charset=utf-8');
+header("Access-Control-Allow-Origin: *");
+header("Content-Type: application/json; charset=UTF-8");
 
-function curl_get($url) {
-    $ch = curl_init();
-    curl_setopt_array($ch, [
-        CURLOPT_URL => $url,
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_SSL_VERIFYPEER => false,
-        CURLOPT_USERAGENT => "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-        CURLOPT_TIMEOUT => 10
-    ]);
-    $data = curl_exec($ch);
-    curl_close($ch);
-    return $data;
-}
-
-// Danh sách category hợp lệ
 $categories = [
-    "trang-chu" => "https://vnexpress.net/",
-    "the-gioi" => "https://vnexpress.net/the-gioi",
-    "kinh-doanh" => "https://vnexpress.net/kinh-doanh",
-    "giai-tri" => "https://vnexpress.net/giai-tri",
-    "the-thao" => "https://vnexpress.net/the-thao",
-    "cong-nghe" => "https://vnexpress.net/cong-nghe",
-    "doi-song" => "https://vnexpress.net/doi-song",
-    "phap-luat" => "https://vnexpress.net/phap-luat"
+    "Trang chủ" => "https://vnexpress.net/rss/tin-moi-nhat.rss",
+    "Thế giới" => "https://vnexpress.net/rss/the-gioi.rss",
+    "Kinh doanh" => "https://vnexpress.net/rss/kinh-doanh.rss",
+    "Giải trí" => "https://vnexpress.net/rss/giai-tri.rss",
+    "Thể thao" => "https://vnexpress.net/rss/the-thao.rss",
+    "Pháp luật" => "https://vnexpress.net/rss/phap-luat.rss",
+    "Khoa học" => "https://vnexpress.net/rss/khoa-hoc.rss",
 ];
 
-$cate = $_GET['cate'] ?? 'trang-chu';
-$url = $categories[$cate] ?? $categories['trang-chu'];
+$category = $_GET["category"] ?? "Trang chủ";
+$url = $categories[$category] ?? $categories["Trang chủ"];
 
-$html = curl_get($url);
-if (!$html) {
-    echo json_encode(["error" => "Không thể tải trang"]);
+// Load RSS
+$xml = @simplexml_load_file($url);
+
+if (!$xml) {
+    echo json_encode(["error" => "Không tải được RSS feed"]);
     exit;
 }
 
-// Parse HTML
-libxml_use_internal_errors(true);
-$dom = new DOMDocument();
-$dom->loadHTML($html);
-libxml_clear_errors();
+$items = [];
+foreach ($xml->channel->item as $item) {
+    // Lấy ảnh từ phần mô tả (VnExpress nhúng <img>)
+    $description = (string)$item->description;
+    preg_match('/<img[^>]+src="([^"]+)"/', $description, $match);
+    $image = $match[1] ?? '';
 
-$xpath = new DOMXPath($dom);
-$articles = $xpath->query("//article");
+    // Loại bỏ thẻ HTML khỏi mô tả
+    $cleanDesc = strip_tags($description);
 
-$news = [];
-foreach ($articles as $item) {
-    $titleNode = $xpath->query(".//h3/a", $item)->item(0);
-    $descNode  = $xpath->query(".//p", $item)->item(0);
-    $imgNode   = $xpath->query(".//img", $item)->item(0);
-
-    if ($titleNode) {
-        $title = trim($titleNode->textContent);
-        $link  = $titleNode->getAttribute("href");
-        $desc  = $descNode ? trim($descNode->textContent) : "";
-        $img   = $imgNode ? ($imgNode->getAttribute("data-src") ?: $imgNode->getAttribute("src")) : "";
-
-        $news[] = [
-            "title" => $title,
-            "link" => $link,
-            "description" => $desc,
-            "image" => $img,
-            "category" => $cate
-        ];
-    }
+    $items[] = [
+        "title" => (string)$item->title,
+        "link" => (string)$item->link,
+        "description" => $cleanDesc,
+        "image" => $image,
+    ];
 }
 
-echo json_encode($news, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+echo json_encode([
+    "category" => $category,
+    "news" => $items
+], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+?>
