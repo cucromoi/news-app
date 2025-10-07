@@ -1,26 +1,46 @@
 <?php
 // -------------------------------------------
-// api.php - Lấy danh sách tin tức từ VnExpress
+// api.php - Lấy tin tức từ VnExpress theo chuyên mục
 // -------------------------------------------
 header('Content-Type: application/json; charset=utf-8');
 
-// URL báo cần lấy
-$url = "https://vnexpress.net/";
+function curl_get($url) {
+    $ch = curl_init();
+    curl_setopt_array($ch, [
+        CURLOPT_URL => $url,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_SSL_VERIFYPEER => false,
+        CURLOPT_USERAGENT => "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+        CURLOPT_TIMEOUT => 10
+    ]);
+    $data = curl_exec($ch);
+    curl_close($ch);
+    return $data;
+}
 
-// Giả lập trình duyệt để tránh bị chặn
-$context = stream_context_create([
-    "http" => [
-        "header" => "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
-    ]
-]);
+// Danh sách category hợp lệ
+$categories = [
+    "trang-chu" => "https://vnexpress.net/",
+    "the-gioi" => "https://vnexpress.net/the-gioi",
+    "kinh-doanh" => "https://vnexpress.net/kinh-doanh",
+    "giai-tri" => "https://vnexpress.net/giai-tri",
+    "the-thao" => "https://vnexpress.net/the-thao",
+    "cong-nghe" => "https://vnexpress.net/cong-nghe",
+    "doi-song" => "https://vnexpress.net/doi-song",
+    "phap-luat" => "https://vnexpress.net/phap-luat"
+];
 
-$html = @file_get_contents($url, false, $context);
+$cate = $_GET['cate'] ?? 'trang-chu';
+$url = $categories[$cate] ?? $categories['trang-chu'];
+
+$html = curl_get($url);
 if (!$html) {
     echo json_encode(["error" => "Không thể tải trang"]);
     exit;
 }
 
-// Parse HTML bằng DOMDocument
+// Parse HTML
 libxml_use_internal_errors(true);
 $dom = new DOMDocument();
 $dom->loadHTML($html);
@@ -37,15 +57,16 @@ foreach ($articles as $item) {
 
     if ($titleNode) {
         $title = trim($titleNode->textContent);
-        $link = $titleNode->getAttribute("href");
-        $desc = $descNode ? trim($descNode->textContent) : "";
-        $img = $imgNode ? $imgNode->getAttribute("data-src") : "";
+        $link  = $titleNode->getAttribute("href");
+        $desc  = $descNode ? trim($descNode->textContent) : "";
+        $img   = $imgNode ? ($imgNode->getAttribute("data-src") ?: $imgNode->getAttribute("src")) : "";
 
         $news[] = [
             "title" => $title,
             "link" => $link,
             "description" => $desc,
-            "image" => $img
+            "image" => $img,
+            "category" => $cate
         ];
     }
 }

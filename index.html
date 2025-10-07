@@ -2,92 +2,36 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Tin tức mới nhất</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bảng Tin Nhanh</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <!-- HEADER -->
-  <header class="site-header">
-    <div class="container header-inner">
-      <div class="brand">
-        <div class="logo">📰</div>
-        <div class="site-title">
-          <h1>NewsPH</h1>
-          <small>Tin nóng, gọn, lẹ</small>
-        </div>
-      </div>
-
-      <nav class="site-nav" aria-label="Main navigation">
-        <button id="load-btn" class="btn">Tải tin</button>
-      </nav>
-    </div>
+  <header>
+    <h1>BẢNG TIN MỚI NHẤT</h1>
+    <nav>
+      <button data-category="all" class="active">Tất cả</button>
+      <button data-category="thoi-su">Thời sự</button>
+      <button data-category="kinh-doanh">Kinh doanh</button>
+      <button data-category="the-thao">Thể thao</button>
+      <button data-category="giai-tri">Giải trí</button>
+      <button data-category="cong-nghe">Công nghệ</button>
+    </nav>
   </header>
 
-  <!-- MAIN (2 columns: sidebar + content) -->
-  <main class="container main-grid">
-    <!-- SIDEBAR -->
-    <aside class="sidebar" aria-label="Sidebar">
-      <div class="card">
-        <h3>Chuyên mục</h3>
-        <ul class="categories">
-          <li><a href="#" data-cate="">Tất cả</a></li>
-          <li><a href="#" data-cate="/tin-moi-nhat">Tin mới</a></li>
-          <li><a href="#" data-cate="/the-gioi">Thế giới</a></li>
-          <li><a href="#" data-cate="/the-thao">Thể thao</a></li>
-          <li><a href="#" data-cate="/khoa-hoc">Công nghệ</a></li>
-        </ul>
-      </div>
-
-      <div class="card">
-        <h3>Về NewsPH</h3>
-        <p class="muted">Demo nhỏ dùng PHP + cURL để lấy tin từ một trang báo, hiển thị ảnh, tiêu đề và mô tả.</p>
-      </div>
-    </aside>
-
-    <!-- CONTENT -->
-    <section class="content" aria-label="Tin tức">
-      <div id="news-list" class="news-container">
-        <!-- JS sẽ fill ở đây -->
-      </div>
-    </section>
+  <main>
+    <div id="news-container" class="news-container"></div>
+    <div class="pagination">
+      <button id="prev-btn" disabled>← Trước</button>
+      <span id="page-info">Trang 1</span>
+      <button id="next-btn">Sau →</button>
+    </div>
   </main>
 
-  <!-- FOOTER -->
-  <footer class="site-footer">
-    <div class="container footer-inner">
-      <div>© <span id="year"></span> NewsPH — Demo scraping</div>
-      <div class="footer-links">
-        <a href="#">Privacy</a>
-        <a href="#">Terms</a>
-      </div>
-    </div>
+  <footer>
+    <p>© 2025 NewsPH. Made with ❤️ by Nam Trương</p>
   </footer>
 
   <script src="script.js"></script>
-  <script>
-    // update year in footer
-    document.getElementById('year').textContent = new Date().getFullYear();
-
-    // category filter: gọi lại loadNews với param bằng cách set window.currentCate
-    (function setupCateLinks(){
-      const links = document.querySelectorAll('.categories a[data-cate]');
-      links.forEach(a=>{
-        a.addEventListener('click', (e)=>{
-          e.preventDefault();
-          // highlight active
-          links.forEach(x=>x.classList.remove('active'));
-          a.classList.add('active');
-          // set global and reload
-          window.currentCate = a.getAttribute('data-cate') || '';
-          // Nếu API hỗ trợ param cate, script.js có thể sử dụng window.currentCate khi fetch.
-          // Hiện tại script.js fetch "api.php" không dùng cate; nếu muốn, chỉnh api.php để đọc ?cate=
-          loadNews(); // loadNews được định nghĩa trong script.js
-        });
-      });
-      // mặc định active "Tất cả"
-      links[0].classList.add('active');
-    })();
-  </script>
 </body>
 </html>
