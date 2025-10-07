@@ -1,65 +1,75 @@
-const API_BASE = "../api.php";
-let currentCategory = "Trang chủ";
+// script.js - hiển thị tin, phân trang, lazy-load ảnh
+
+const newsList = document.getElementById("news-list");
+const prevBtn = document.getElementById("prev-btn");
+const nextBtn = document.getElementById("next-btn");
+const buttons = document.querySelectorAll("#categories button");
+
+let currentCategory = "trang-chu";
 let currentPage = 1;
-const perPage = 9;
+let itemsPerPage = 9;
+let newsData = [];
 
-async function loadNews(category = "Trang chủ") {
-  currentCategory = category;
-  currentPage = 1;
-
-  document.querySelector("#news").innerHTML = "<p>Đang tải...</p>";
+// Gọi API lấy dữ liệu
+async function loadNews(category = currentCategory) {
+  newsList.innerHTML = "<p>⏳ Đang tải...</p>";
   try {
-    const res = await fetch(`${API_BASE}?category=${encodeURIComponent(category)}`);
+    const res = await fetch(`../api.php?category=${category}`);
     const data = await res.json();
     if (data.error) throw new Error(data.error);
-
-    renderNews(data.news);
-    renderPagination(data.news);
-  } catch (e) {
-    document.querySelector("#news").innerHTML = `<p>Lỗi: ${e.message}</p>`;
+    newsData = data;
+    currentPage = 1;
+    renderPage();
+  } catch (err) {
+    newsList.innerHTML = `<p style="color:red">Lỗi khi tải dữ liệu!</p>`;
   }
 }
 
-function renderNews(news) {
-  const start = (currentPage - 1) * perPage;
-  const paged = news.slice(start, start + perPage);
+// Render 9 bài / trang
+function renderPage() {
+  newsList.innerHTML = "";
+  const start = (currentPage - 1) * itemsPerPage;
+  const end = start + itemsPerPage;
+  const pageItems = newsData.slice(start, end);
 
-  document.querySelector("#news").innerHTML = paged
-    .map(
-      (item) => `
-      <div class="news-card">
-        <img src="${item.image}" alt="Ảnh" onerror="this.src='https://via.placeholder.com/300x200?text=No+Image'">
-        <div class="news-content">
-          <h3>${item.title}</h3>
-          <p>${item.description.substring(0, 150)}...</p>
-          <a href="${item.link}" target="_blank">Đọc thêm</a>
-        </div>
-      </div>
-    `
-    )
-    .join("");
+  pageItems.forEach(item => {
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `
+      <img src="${item.image}" loading="lazy" alt="ảnh">
+      <div class="card-content">
+        <h3><a href="${item.link}" target="_blank">${item.title}</a></h3>
+        <p>${item.description}</p>
+      </div>`;
+    newsList.appendChild(card);
+  });
+
+  prevBtn.disabled = currentPage === 1;
+  nextBtn.disabled = end >= newsData.length;
 }
 
-function renderPagination(news) {
-  const totalPages = Math.ceil(news.length / perPage);
-  const pagination = document.querySelector("#pagination");
-  pagination.innerHTML = "";
-
-  for (let i = 1; i <= totalPages; i++) {
-    const btn = document.createElement("button");
-    btn.textContent = i;
-    btn.className = i === currentPage ? "active" : "";
-    btn.onclick = () => {
-      currentPage = i;
-      renderNews(news);
-      renderPagination(news);
-    };
-    pagination.appendChild(btn);
-  }
-}
-
-document.querySelectorAll(".category-btn").forEach((btn) => {
-  btn.addEventListener("click", () => loadNews(btn.textContent));
+buttons.forEach(btn => {
+  btn.addEventListener("click", () => {
+    buttons.forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    currentCategory = btn.dataset.category;
+    loadNews(currentCategory);
+  });
 });
 
-loadNews();
+prevBtn.onclick = () => {
+  if (currentPage > 1) {
+    currentPage--;
+    renderPage();
+  }
+};
+
+nextBtn.onclick = () => {
+  if ((currentPage * itemsPerPage) < newsData.length) {
+    currentPage++;
+    renderPage();
+  }
+};
+
+// Auto load khi mở trang
+document.addEventListener("DOMContentLoaded", () => loadNews());

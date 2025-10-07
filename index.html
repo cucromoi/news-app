@@ -1,35 +1,33 @@
 <!DOCTYPE html>
 <html lang="vi">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Tin tức mới nhất</title>
-    <link rel="stylesheet" href="style.css" />
-  </head>
-  <body>
-    <header>
-      <h1>Bản tin tổng hợp</h1>
-      <p>Cập nhật từ VnExpress (RSS Feed)</p>
-    </header>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tin tức VNExpress</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>📰 Tin tức VNExpress</header>
+  
+  <nav id="categories">
+    <button data-category="trang-chu" class="active">Trang chủ</button>
+    <button data-category="the-gioi">Thế giới</button>
+    <button data-category="kinh-doanh">Kinh doanh</button>
+    <button data-category="giai-tri">Giải trí</button>
+    <button data-category="the-thao">Thể thao</button>
+    <button data-category="phap-luat">Pháp luật</button>
+    <button data-category="khoa-hoc">Khoa học</button>
+  </nav>
 
-    <nav>
-      <button class="category-btn">Trang chủ</button>
-      <button class="category-btn">Thế giới</button>
-      <button class="category-btn">Kinh doanh</button>
-      <button class="category-btn">Giải trí</button>
-      <button class="category-btn">Thể thao</button>
-      <button class="category-btn">Pháp luật</button>
-      <button class="category-btn">Khoa học</button>
-    </nav>
+  <main>
+    <div class="grid" id="news-list"></div>
+    <div class="pagination">
+      <button id="prev-btn">⬅ Trang trước</button>
+      <button id="next-btn">Trang sau ➡</button>
+    </div>
+  </main>
 
-    <main>
-      <div id="news"></div>
-      <div id="pagination"></div>
-    </main>
-
-    <footer>
-      <p>© 2025 Tin tức từ RSS VnExpress | Made with Nam Trương❤️</p>
-    </footer>
-
-    <script src="script.js"></script>
-  </body>
+  <footer>© 2025 Tin tức VNExpress - Demo RSS by Nhật Nam</footer>
+  <script src="script.js"></script>
+</body>
 </html>
